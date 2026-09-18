@@ -1,0 +1,28 @@
+Build a lightweight Progressive Web App (PWA) called "LeetCode Tracker" with a clean, modern UI (React, Vite, Tailwind CSS, and Lucide React icons). 
+
+### 1. Backend & Authentication
+- Integrate **Firebase Auth** (Google Sign-In or Email/Password) so the app is private and secure.
+- Integrate **Cloud Firestore** to store all user tracking data persistently. Data must persist indefinitely for multi-year tracking.
+
+### 2. Core Features & Input Method
+- **Manual Entry Form:** A clean form to log a solved question with the following fields:
+  - Question Title
+  - LeetCode URL (Pasting the link; include a helper function or parser that extracts the problem slug/ID from the URL)
+  - Difficulty Selector (Easy, Medium, Hard)
+  - Attempt Date (Defaults to today, but allows picking past dates via a calendar picker)
+  - Notes / Approach summary
+- **Calendar-Wise Tracking View:** 
+  - A calendar/heatmap or date-wise grouped view showing which questions were solved on specific dates.
+  - Track and display how many times a particular question has been attempted (repetition count).
+
+### 3. Analytics Dashboard
+- Show a summary metrics bar at the top:
+  - **Done Today:** Count and list of questions solved on the current date.
+  - **Total Solved:** Unique questions completed.
+  - **Repeated Questions:** A dedicated section highlighting questions attempted more than once, showing their total attempt counts.
+  - **Current Streak:** Consecutive days with at least one question solved.
+
+### 4. Technical Requirements
+- Modular, clean code structure.
+- Fully responsive design optimized for both desktop and mobile web.
+- Include simple setup instructions in a README.md on how to connect a Firebase project (`firebase-config.js`).

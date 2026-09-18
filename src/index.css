@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { @apply max-w-full overflow-x-hidden; }
+body { @apply bg-slate-950 text-slate-100 antialiased; }
+#root { @apply w-full min-w-0; }
+input, select, textarea { @apply outline-none; }
+input[type='date']::-webkit-calendar-picker-indicator { @apply cursor-pointer opacity-70; }

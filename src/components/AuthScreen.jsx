@@ -1,0 +1,106 @@
+import { useState } from 'react'
+import { Chrome, LogIn, UserPlus, FlaskConical, Code2, AlertTriangle } from 'lucide-react'
+import { isFirebaseConfigured } from '../firebase-config'
+
+export default function AuthScreen({ auth }) {
+  const [mode, setMode] = useState('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!email || !password) return
+    setBusy(true)
+    try {
+      await auth.loginEmail(email.trim(), password, mode)
+    } catch { /* error surfaced via auth.error */ }
+    setBusy(false)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8 shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/20">
+            <Code2 className="w-6 h-6 text-amber-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">LeetCode Tracker</h1>
+            <p className="text-xs text-slate-400">Private problem log · streaks · repeats</p>
+          </div>
+        </div>
+
+        {!isFirebaseConfigured && (
+          <div className="mt-4 flex gap-2 text-xs rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-200 p-3">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>Firebase not configured yet — try <b>Demo mode</b> (localStorage), then follow README to connect Firebase for multi-year cloud sync.</span>
+          </div>
+        )}
+
+        {auth.error && (
+          <div className="mt-4 text-xs rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 p-3">{auth.error}</div>
+        )}
+
+        {isFirebaseConfigured && (
+          <>
+            <button
+              onClick={auth.loginGoogle}
+              className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-white text-slate-900 font-semibold py-2.5 hover:bg-slate-200 transition text-sm"
+            >
+              <Chrome className="w-4 h-4" /> Continue with Google
+            </button>
+
+            <div className="flex items-center gap-3 my-4 text-[11px] text-slate-500">
+              <div className="h-px flex-1 bg-slate-800" /> OR WITH EMAIL <div className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+              {['signin', 'signup'].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`rounded-lg py-1.5 font-medium capitalize transition ${mode === m ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  {m === 'signin' ? 'Sign in' : 'Sign up'}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={submit} className="space-y-3">
+              <input
+                type="email" required placeholder="you@example.com" value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-sm placeholder:text-slate-600 focus:border-amber-400/60"
+              />
+              <input
+                type="password" required minLength={6} placeholder="Password (min 6 chars)" value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-sm placeholder:text-slate-600 focus:border-amber-400/60"
+              />
+              <button
+                disabled={busy}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-400 text-slate-950 font-bold py-2.5 text-sm hover:bg-amber-300 disabled:opacity-60 transition"
+              >
+                {mode === 'signin' ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3 my-4 text-[11px] text-slate-500">
+              <div className="h-px flex-1 bg-slate-800" /> JUST EXPLORING <div className="h-px flex-1 bg-slate-800" />
+            </div>
+          </>
+        )}
+
+        <button
+          onClick={auth.loginDemo}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-700 text-slate-200 font-semibold py-2.5 text-sm hover:bg-slate-800 transition"
+        >
+          <FlaskConical className="w-4 h-4 text-emerald-400" /> Try demo mode (no cloud sync)
+        </button>
+        <p className="mt-4 text-[11px] text-slate-500 text-center">Your data stays private to your account.</p>
+      </div>
+    </div>
+  )
+}

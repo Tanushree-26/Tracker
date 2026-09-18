@@ -1,0 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBowp8YbR_Y7OMZ5xn0pjy8QgI_qghTN3w",
+  authDomain: "leetcode-tracker-effe2.firebaseapp.com",
+  projectId: "leetcode-tracker-effe2",
+  storageBucket: "leetcode-tracker-effe2.firebasestorage.app",
+  messagingSenderId: "885667872621",
+  appId: "1:885667872621:web:67e03111d46d95937f2464",
+  measurementId: "G-J45GSTGJLJ"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
