@@ -1,8 +1,10 @@
-import { ExternalLink, Trash2, StickyNote, CalendarDays, XCircle } from 'lucide-react'
+import { useState } from 'react'
+import { ExternalLink, Trash2, StickyNote, CalendarDays, XCircle, Timer } from 'lucide-react'
 import { diffBadge } from './StatsBar'
 import { formatDate } from '../lib/leetcode'
 
 export default function EntryList({ entries, onDelete, filterDate, onClearFilter, search, questionFilter }) {
+  const [pendingDelete, setPendingDelete] = useState(null)
   let list = entries
   if (filterDate) list = list.filter((e) => e.date === filterDate)
   if (questionFilter) list = list.filter((e) =>
@@ -45,10 +47,12 @@ export default function EntryList({ entries, onDelete, filterDate, onClearFilter
                   {e.number && <span className="text-[10px] font-bold text-slate-400 bg-slate-800/70 px-1.5 py-0.5 rounded">#{e.number}</span>}
                   <span className="font-semibold text-sm truncate">{e.title}</span>
                   <span className={`text-[10px] font-bold border rounded-full px-2 py-0.5 ${diffBadge(e.difficulty)}`}>{e.difficulty}</span>
+                  {e.acceptanceRate != null && <span className="text-[10px] font-semibold text-slate-400 border border-slate-700 rounded-full px-2 py-0.5">{e.acceptanceRate}%</span>}
                   {e.slug && <code className="text-[10px] text-slate-500 bg-slate-800/60 px-1.5 py-0.5 rounded">{e.slug}</code>}
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
                   <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />{formatDate(e.date)}</span>
+                  {e.timeSpent && <span className="flex items-center gap-1"><Timer className="w-3.5 h-3.5" />{e.timeSpent}m</span>}
                   {e.url && (
                     <a href={e.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-sky-300 hover:text-sky-200">
                       <ExternalLink className="w-3.5 h-3.5" /> LeetCode
@@ -59,13 +63,33 @@ export default function EntryList({ entries, onDelete, filterDate, onClearFilter
                   <p className="mt-1.5 flex gap-1.5 text-xs text-slate-400"><StickyNote className="w-3.5 h-3.5 shrink-0 mt-0.5 text-slate-500" /><span className="whitespace-pre-wrap">{e.notes}</span></p>
                 )}
               </div>
-              <button
-                onClick={() => { if (confirm(`Delete "${e.title}" from ${e.date}?`)) onDelete(e.id) }}
-                aria-label="Delete entry"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-red-300 hover:bg-red-500/10 shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                {pendingDelete === e.id ? (
+                  <>
+                    <button
+                      onClick={() => onDelete(e.id)}
+                      className="text-[11px] font-semibold rounded-lg bg-red-500/15 text-red-300 border border-red-500/40 px-2 py-1.5"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setPendingDelete(null)}
+                      aria-label="Cancel delete"
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setPendingDelete(e.id)}
+                    aria-label="Delete entry"
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </li>
         ))}

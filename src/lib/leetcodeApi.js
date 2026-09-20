@@ -21,6 +21,18 @@ const GRAPHQL_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LC_GRAPHQL_URL) ||
   'https://leetcode.com/graphql'
 
+// Public CORS mirrors that forward a request to leetcode.com and add CORS
+// headers the browser needs. Tried in order after the direct call fails.
+const CORS_PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+]
+
+// Non-GraphQL REST mirror as a final tier (also usable without a proxy).
+const REST_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LC_REST_URL) ||
+  'https://alfa-leetcode-api.onrender.com'
+
 const QUESTION_QUERY = `
 query questionData($titleSlug: String!) {
   question(titleSlug: $titleSlug) {
@@ -30,6 +42,7 @@ query questionData($titleSlug: String!) {
     titleSlug
     difficulty
     topicTags { name slug }
+    stats { acceptanceRate }
   }
 }`
 
@@ -43,29 +56,56 @@ export function prettifySlug(slug) {
 }
 
 /**
- * Returns { number, title, slug, difficulty, topics }.
+ * Returns { number, title, slug, difficulty, topics, acceptanceRate }.
  * difficulty is one of 'Easy' | 'Medium' | 'Hard' (or null if unknown).
  * Throws with a user-friendly message on CORS block / 404 / network error.
  */
+async function postJSON(url, body, { signal } = {}) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: 'https://leetcode.com',
+      Referer: `https://leetcode.com/problems/${body.variables.titleSlug}/`
+    },
+    body: JSON.stringify(body),
+    signal
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+// Tiered resolver: direct leetcode.com → CORS mirrors → REST mirror.
+async function fetchGraphQL(clean, { signal } = {}) {
+  const payload = {
+    query: QUESTION_QUERY,
+    variables: { titleSlug: clean },
+    operationName: 'questionData'
+  }
+  const urls = [GRAPHQL_URL, ...CORS_PROXIES.map((p) => p(GRAPHQL_URL))]
+  for (const url of urls) {
+    try {
+      return await postJSON(url, payload, { signal })
+    } catch (e) {
+      if (e?.name === 'AbortError') throw e
+      // try next tier
+    }
+  }
+  // Final tier: REST mirror (GET, no CORS headers needed).
+  const restRes = await fetch(`${REST_URL}/select?titleSlug=${encodeURIComponent(clean)}`, { signal })
+  if (!restRes.ok) {
+    throw new Error('LeetCode blocked the request (CORS) — use the suggested title below, or set up the one-line proxy in the README for full auto-fill.')
+  }
+  return { data: { question: await restRes.json() } }
+}
+
 export async function fetchQuestionInfo(slug, { signal } = {}) {
   const clean = String(slug || '').trim().toLowerCase()
   if (!clean) throw new Error('No problem slug found in the URL.')
 
-  let res
+  let json
   try {
-    res = await fetch(GRAPHQL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Referer: `https://leetcode.com/problems/${clean}/`
-      },
-      body: JSON.stringify({
-        query: QUESTION_QUERY,
-        variables: { titleSlug: clean },
-        operationName: 'questionData'
-      }),
-      signal
-    })
+    json = await fetchGraphQL(clean, { signal })
   } catch (e) {
     if (e?.name === 'AbortError') throw e
     throw new Error(
@@ -73,23 +113,18 @@ export async function fetchQuestionInfo(slug, { signal } = {}) {
     )
   }
 
-  if (!res.ok) throw new Error(`LeetCode refused the request (HTTP ${res.status}) — use the suggested title, or the proxy in the README.`)
-
-  let json
-  try {
-    json = await res.json()
-  } catch {
-    throw new Error('LeetCode blocked the request — use the suggested title, or the proxy in the README.')
-  }
   const q = json?.data?.question
   if (!q) throw new Error('Problem not found — double-check the URL slug.')
 
   const diff = ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : null
+  const rawTopics = q.topicTags || []
+  const acceptance = q.acceptanceRate ?? q.stats?.acceptanceRate
   return {
-    number: q.questionFrontendId || q.questionId || '',
-    title: q.title || prettifySlug(q.titleSlug || clean),
+    number: q.questionFrontendId || q.questionNumber || q.questionId || '',
+    title: q.title || q.questionTitle || prettifySlug(q.titleSlug || clean),
     slug: (q.titleSlug || clean).toLowerCase(),
     difficulty: diff,
-    topics: (q.topicTags || []).map((t) => t.name).filter(Boolean)
+    topics: rawTopics.map((t) => t?.name ?? t).filter(Boolean),
+    acceptanceRate: typeof acceptance === 'number' ? acceptance : null
   }
 }

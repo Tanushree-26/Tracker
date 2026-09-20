@@ -21,7 +21,6 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
-// TODO: paste your Firebase web config here (see README.md)
 const firebaseConfig = {
   apiKey: 'AIzaSyBowp8YbR_Y7OMZ5xn0pjy8QgI_qghTN3w',
   authDomain: 'leetcode-tracker-effe2.firebaseapp.com',
@@ -32,18 +31,7 @@ const firebaseConfig = {
   measurementId: 'G-J45GSTGJLJ'
 }
 
-export const isFirebaseConfigured = firebaseConfig.apiKey !== 'YOUR_API_KEY'
-
-let app = null
-let auth = null
-let db = null
-let googleProvider = null
-
-if (isFirebaseConfigured) {
-  app = initializeApp(firebaseConfig)
-  auth = getAuth(app)
-  db = getFirestore(app)
-  googleProvider = new GoogleAuthProvider()
-}
-
-export { app, auth, db, googleProvider }
+export const app = initializeApp(firebaseConfig)
+export const auth = getAuth(app)
+export const db = getFirestore(app)
+export const googleProvider = new GoogleAuthProvider()

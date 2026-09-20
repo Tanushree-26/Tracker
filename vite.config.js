@@ -3,6 +3,25 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/lc-api': {
+        target: 'https://leetcode.com',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/lc-api/, '')
+      }
+    }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          react: ['react', 'react-dom']
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
@@ -31,6 +50,11 @@ export default defineConfig({
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: { cacheName: 'firestore-cache', networkTimeoutSeconds: 10 }
+          },
+          {
+            urlPattern: /\/lc-api\/graphql/,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'lc-api-cache', networkTimeoutSeconds: 5 }
           }
         ]
       }

@@ -74,3 +74,37 @@ export function difficultyCount(entries) {
   }
   return c
 }
+
+const REVIEW_INTERVALS = [1, 3, 7, 14, 30] // days between reviews, growing
+const DAY_MS = 86400000
+
+function localISO(dt) {
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const d = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/**
+ * Spaced-repetition review status derived from flat attempt dates (no schema
+ * change needed). Each attempt advances the interval [1,3,7,14,30] days.
+ * Returns groups that are due for review today or already overdue.
+ */
+export function reviewStatus(entries) {
+  const today = localISO(new Date())
+  const due = []
+  for (const g of groupByQuestion(entries)) {
+    if (g.count < 2) continue // only repeat-tracked questions get a schedule
+    const next = g.dates.reduce((acc, d, i) => {
+      const interval = (REVIEW_INTERVALS[i] || REVIEW_INTERVALS[REVIEW_INTERVALS.length - 1]) * DAY_MS
+      const at = new Date(d + 'T00:00:00').getTime() + interval
+      return Math.min(acc, at)
+    }, Infinity)
+    const nextISO = localISO(new Date(next))
+    if (nextISO <= today) {
+      const daysOverdue = Math.round((new Date(today + 'T00:00:00') - new Date(nextISO + 'T00:00:00')) / DAY_MS)
+      due.push({ ...g, nextReviewISO: nextISO, daysOverdue })
+    }
+  }
+  return due.sort((a, b) => a.nextReviewISO.localeCompare(b.nextReviewISO))
+}

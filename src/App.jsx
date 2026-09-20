@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Code2, LogOut, Search, Cloud, HardDrive } from 'lucide-react'
+import { Code2, LogOut, Search, Cloud } from 'lucide-react'
 import { useAuth } from './hooks/useAuth'
 import { useEntries } from './hooks/useEntries'
 import { groupByQuestion, calcStreak, difficultyCount } from './lib/stats'
@@ -9,11 +9,10 @@ import StatsBar from './components/StatsBar'
 import CalendarView from './components/CalendarView'
 import EntryList from './components/EntryList'
 import RepeatedSection from './components/RepeatedSection'
-import { isFirebaseConfigured } from './firebase-config'
 
 export default function App() {
   const auth = useAuth()
-  const { entries, loading, addEntry, removeEntry, isLocal } = useEntries(auth.user, auth.demoMode)
+  const { entries, loading, addEntry, removeEntry } = useEntries(auth.user)
   const [selectedDate, setSelectedDate] = useState(null)
   const [questionFilter, setQuestionFilter] = useState(null)
   const [search, setSearch] = useState('')
@@ -49,9 +48,7 @@ export default function App() {
             <div className="min-w-0">
               <h1 className="font-extrabold leading-tight truncate">LeetCode Tracker</h1>
               <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
-                {isLocal
-                  ? <><HardDrive className="w-3 h-3 text-emerald-400" /> Demo — local only</>
-                  : <><Cloud className="w-3 h-3 text-sky-300" /> {auth.user.email || auth.user.displayName} · cloud sync</>}
+                <Cloud className="w-3 h-3 text-sky-300" /> {auth.user.email || auth.user.displayName} · cloud sync
               </p>
             </div>
           </div>
@@ -93,6 +90,7 @@ export default function App() {
               <EntryForm onAdd={addEntry} />
               <RepeatedSection
                 groups={groups}
+                entries={entries}
                 onSelect={(g) => { setQuestionFilter(g); setSelectedDate(null) }}
               />
             </div>
@@ -115,7 +113,7 @@ export default function App() {
         )}
 
         <footer className="text-center text-[11px] text-slate-600 pt-4 pb-8">
-          LeetCode Tracker PWA · data {isLocal ? 'stored locally (demo)' : 'persisted in Cloud Firestore'} · installable from browser menu
+          LeetCode Tracker PWA · data persisted in Cloud Firestore · installable from browser menu
         </footer>
       </main>
     </div>

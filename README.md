@@ -11,7 +11,8 @@ Lightweight, installable Progressive Web App to log LeetCode solves, view a cale
 - **Repeated section** — click a repeated question to see all its attempts.
 - **Search + filters** — by title/slug/notes, date, or question.
 - **PWA** — manifest + service worker (via `vite-plugin-pwa`), installable on desktop/mobile, offline app-shell caching.
-- **Demo mode** — works with zero config using localStorage (seeded with 3 examples).
+
+> Requires Firebase — data lives in Cloud Firestore per user. No local/demo storage.
 
 ## Quick start
 
@@ -67,11 +68,13 @@ service cloud.firestore {
   "difficulty": "Easy | Medium | Hard",
   "date": "2026-09-16",
   "notes": "...",
+  "timeSpent": "45",
+  "acceptanceRate": 54.2,
   "createdAt": "2026-09-16T…"
 }
 ```
 
-Data persists indefinitely in Firestore — safe for multi-year tracking. Without config, the app falls back to demo mode (localStorage key `lc-tracker-demo-entries`).
+Data persists indefinitely in Firestore — safe for multi-year tracking.
 
 ## Auto-fill from URL (LeetCode GraphQL)
 
@@ -92,7 +95,11 @@ query questionData($titleSlug: String!) {
 It fills title (only if empty), difficulty, problem #, and shows topic tags. Two things to know:
 
 1. **Instant offline fallback** — “Use … as title” prettifies the slug (`two-sum` → `Two Sum`) with zero network.
-2. **Browsers may block the direct call** (LeetCode sends no CORS headers, and it rate-limits datacenter IPs). If you see the CORS error, route the same request through a same-origin proxy and point the app at it:
+2. **Browsers may block the direct call** (LeetCode sends no CORS headers, and it rate-limits datacenter IPs). `fetchQuestionInfo()` tries a **three-tier fallback chain** before giving up:
+   - direct `POST` to LeetCode GraphQL,
+   - two public CORS mirrors (`api.allorigins.win`, `corsproxy.io`),
+   - a public REST mirror (`alfa-leetcode-api.onrender.com`).
+   If all tiers fail, you'll see a friendly message and can still use the suggested title. For guaranteed auto-fill, point the app at a same-origin proxy:
 
 ```bash
 # .env — picked up automatically, no code change needed
@@ -129,8 +136,8 @@ For production, any tiny function that forwards the POST body to `https://leetco
 │   │   ├── leetcode.js         # URL parser, entryKey, date helpers
 │   │   └── stats.js            # groupByDate, groupByQuestion, calcStreak
 │   ├── hooks/
-│   │   ├── useAuth.js          # Firebase Auth + demo fallback
-│   │   └── useEntries.js       # Firestore subscription + local fallback
+│   │   ├── useAuth.js          # Firebase Auth
+│   │   └── useEntries.js       # Firestore subscription + mutations
 │   └── components/
 │       ├── AuthScreen.jsx
 │       ├── EntryForm.jsx

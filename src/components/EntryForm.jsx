@@ -12,6 +12,7 @@ export default function EntryForm({ onAdd }) {
   const [number, setNumber] = useState('')
   const [date, setDate] = useState(todayISO())
   const [notes, setNotes] = useState('')
+  const [timeSpent, setTimeSpent] = useState('')
   const [saving, setSaving] = useState(false)
   const [ok, setOk] = useState('')
   const [fetching, setFetching] = useState(false)
@@ -62,11 +63,13 @@ export default function EntryForm({ onAdd }) {
         number: number.trim(),
         difficulty,
         date,
-        notes: notes.trim()
+        notes: notes.trim(),
+        timeSpent: timeSpent.trim(),
+        acceptanceRate: fetched?.acceptanceRate ?? null
       })
       setTitle(''); setUrl(''); setNotes('')
       setNumber(''); setFetched(null); setFetchError('')
-      setDifficulty('Medium'); setDate(todayISO())
+      setDifficulty('Medium'); setDate(todayISO()); setTimeSpent('')
       setOk('Logged! Nice work.')
       setTimeout(() => setOk(''), 2500)
     } finally {
@@ -105,6 +108,19 @@ export default function EntryForm({ onAdd }) {
             className="mt-1 w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2.5 text-sm focus:border-amber-400/60"
           />
         </label>
+      </div>
+
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+        <label className="block">
+          <span className="text-xs font-medium text-slate-400">Time spent (minutes)</span>
+          <input
+            type="number" min="0" value={timeSpent} inputMode="numeric"
+            onChange={(e) => setTimeSpent(e.target.value)}
+            placeholder="e.g. 45"
+            className="mt-1 w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2.5 text-sm placeholder:text-slate-600 focus:border-amber-400/60"
+          />
+        </label>
+        <div className="hidden min-[420px]:block" />
       </div>
 
       <label className="block">
@@ -149,7 +165,7 @@ export default function EntryForm({ onAdd }) {
         {fetchError && <p className="text-[11px] text-red-300">{fetchError}</p>}
         {fetched && !fetchError && (
           <p className="text-[11px] text-emerald-300">
-            Found{fetched.number ? ` #${fetched.number}` : ''}{fetched.topics.length ? ` · ${fetched.topics.slice(0, 4).join(', ')}${fetched.topics.length > 4 ? '…' : ''}` : ''}
+            Found{fetched.number ? ` #${fetched.number}` : ''}{fetched.difficulty ? ` · ${fetched.difficulty}` : ''}{fetched.acceptanceRate != null ? ` · ${fetched.acceptanceRate}% accepted` : ''}{fetched.topics.length ? ` · ${fetched.topics.slice(0, 4).join(', ')}${fetched.topics.length > 4 ? '…' : ''}` : ''}
           </p>
         )}
       </label>
